@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Catalog your Commodore 64 game collection with automatic metadata and box art">
+    <title>C64 Cataloger - Your Commodore 64 Collection Manager</title>
+    <link rel="stylesheet" href="index.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- JSZip for handling ZIP files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <span class="logo-icon">🕹️</span>
+                <h1>C64 Cataloger</h1>
+            </div>
+            <nav class="header-nav">
+                <button class="btn btn-icon" id="btn-grid-view" title="Grid View">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" />
+                    </svg>
+                </button>
+                <button class="btn btn-icon" id="btn-list-view" title="List View">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <rect x="3" y="4" width="18" height="4" rx="1" />
+                        <rect x="3" y="10" width="18" height="4" rx="1" />
+                        <rect x="3" y="16" width="18" height="4" rx="1" />
+                    </svg>
+                </button>
+                <button class="btn btn-icon" id="btn-settings" title="Settings">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path
+                            d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+                    </svg>
+                </button>
+            </nav>
+        </header>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <div class="search-container">
+                <svg class="search-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                    <path
+                        d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+                </svg>
+                <input type="text" id="search-input" class="search-input" placeholder="Search your collection...">
+            </div>
+            <div class="toolbar-actions">
+                <select id="filter-type" class="filter-select">
+                    <option value="all">All Types</option>
+                    <option value=".d64">Disk (.d64)</option>
+                    <option value=".tap">Tape (.tap)</option>
+                    <option value=".crt">Cartridge (.crt)</option>
+                </select>
+                <select id="filter-tags" class="filter-select">
+                    <option value="all">All Tags</option>
+                </select>
+                <button class="btn btn-primary" id="btn-scan">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+                    </svg>
+                    Scan Folder
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Catalog Grid -->
+            <section class="catalog-section" id="catalog-container">
+                <div class="catalog-grid" id="catalog-grid">
+                    <!-- Games will be dynamically inserted here -->
+                </div>
+
+                <!-- Empty State -->
+                <div class="empty-state" id="empty-state">
+                    <div class="empty-state-icon">
+                        <svg viewBox="0 0 80 50" width="120" height="75" fill="currentColor">
+                            <!-- Cassette body -->
+                            <rect x="2" y="2" width="76" height="46" rx="4" fill="var(--bg-tertiary)"
+                                stroke="var(--c64-light-blue)" stroke-width="2" />
+                            <!-- Label area -->
+                            <rect x="8" y="6" width="64" height="20" rx="2" fill="var(--bg-elevated)" />
+                            <!-- Tape reels -->
+                            <circle cx="24" cy="35" r="10" fill="var(--bg-primary)" stroke="var(--c64-blue)"
+                                stroke-width="2" />
+                            <circle cx="56" cy="35" r="10" fill="var(--bg-primary)" stroke="var(--c64-blue)"
+                                stroke-width="2" />
+                            <!-- Reel centers -->
+                            <circle cx="24" cy="35" r="4" fill="var(--c64-purple)" />
+                            <circle cx="56" cy="35" r="4" fill="var(--c64-purple)" />
+                            <!-- Tape window -->
+                            <rect x="32" y="30" width="16" height="10" rx="1" fill="var(--bg-primary)"
+                                stroke="var(--c64-blue)" stroke-width="1" />
+                            <!-- Screw holes -->
+                            <circle cx="10" cy="10" r="2" fill="var(--text-muted)" />
+                            <circle cx="70" cy="10" r="2" fill="var(--text-muted)" />
+                        </svg>
+                    </div>
+                    <h2>No Games in Your Catalog</h2>
+                    <p>Click "Scan Folder" to add your C64 collection</p>
+                    <button class="btn btn-primary btn-large" id="btn-scan-empty">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                            <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+                        </svg>
+                        Scan Folder
+                    </button>
+                </div>
+            </section>
+
+            <!-- Detail Panel -->
+            <aside class="detail-panel" id="detail-panel">
+                <button class="btn btn-icon detail-close" id="btn-close-detail">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path
+                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                    </svg>
+                </button>
+                <div class="detail-content">
+                    <div class="detail-artwork">
+                        <img id="detail-boxart" src="" alt="Box Art">
+                        <div class="detail-artwork-placeholder" id="detail-artwork-placeholder">
+                            <span>🎮</span>
+                        </div>
+                    </div>
+                    <div class="detail-info">
+                        <h2 id="detail-title">Game Title</h2>
+                        <div class="detail-meta">
+                            <span class="detail-year" id="detail-year">1985</span>
+                            <span class="detail-type" id="detail-type">.d64</span>
+                        </div>
+                        <div class="detail-publisher" id="detail-publisher">Publisher Name</div>
+                        <div class="detail-filename">
+                            <label>Filename</label>
+                            <span id="detail-filename">game.d64</span>
+                        </div>
+                        <div class="detail-path">
+                            <label>Path</label>
+                            <span id="detail-path">/path/to/game.d64</span>
+                        </div>
+                        <div class="detail-tags">
+                            <label>Tags</label>
+                            <div class="tags-container" id="detail-tags-container">
+                                <!-- Tags will be inserted here -->
+                            </div>
+                            <button class="btn btn-small btn-ghost" id="btn-add-tag">+ Add Tag</button>
+                        </div>
+                        <div class="detail-notes">
+                            <label>Notes</label>
+                            <textarea id="detail-notes" placeholder="Add your notes..."></textarea>
+                        </div>
+                        <div class="detail-actions">
+                            <button class="btn btn-primary" id="btn-launch">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path d="M8 5v14l11-7z" />
+                                </svg>
+                                Launch in VICE
+                            </button>
+                            <button class="btn btn-ghost" id="btn-copy-path">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path
+                                        d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+                                </svg>
+                                Copy Path
+                            </button>
+                            <button class="btn btn-danger" id="btn-remove">
+                                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                    <path
+                                        d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                                </svg>
+                                Remove
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <!-- Stats Bar -->
+        <footer class="stats-bar">
+            <div class="stat">
+                <span class="stat-value" id="stat-total">0</span>
+                <span class="stat-label">Total Games</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value" id="stat-disk">0</span>
+                <span class="stat-label">Disk Images</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value" id="stat-tape">0</span>
+                <span class="stat-label">Tape Files</span>
+            </div>
+            <div class="stat">
+                <span class="stat-value" id="stat-cart">0</span>
+                <span class="stat-label">Cartridges</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button class="btn btn-icon" id="btn-close-settings">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path
+                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="emulator-path">VICE Emulator Path</label>
+                    <div class="input-with-button">
+                        <input type="text" id="emulator-path" placeholder="C:\Program Files\VICE\x64sc.exe">
+                        <button class="btn btn-ghost" id="btn-browse-emulator">Browse</button>
+                    </div>
+                    <span class="form-hint">Path to your VICE executable (x64, x64sc, or x128)</span>
+                </div>
+                <div class="form-group">
+                    <label>Catalog Actions</label>
+                    <div class="button-group">
+                        <button class="btn btn-ghost" id="btn-export">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+                            </svg>
+                            Export Catalog
+                        </button>
+                        <button class="btn btn-ghost" id="btn-import">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z" />
+                            </svg>
+                            Import Catalog
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Box Art Settings</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="setting-auto-fetch-art" checked>
+                            <span>Automatically fetch box art when scanning</span>
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="setting-cache-art" checked>
+                            <span>Cache artwork locally</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Local Library</label>
+                    <p class="form-hint">Organize all your games into a structured folder on your drive.</p>
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="setting-local-library">
+                            <span>Enable Local Library</span>
+                        </label>
+                    </div>
+                    <div class="library-settings" id="library-settings">
+                        <div class="input-with-button">
+                            <input type="text" id="library-path" placeholder="Select a folder for your library..."
+                                readonly>
+                            <button class="btn btn-ghost" id="btn-browse-library">Browse</button>
+                        </div>
+                        <div class="library-stats" id="library-stats">
+                            <span class="library-stat"><strong id="library-game-count">0</strong> games</span>
+                            <span class="library-stat"><strong id="library-size">0 MB</strong> used</span>
+                        </div>
+                        <button class="btn btn-ghost" id="btn-organize-existing">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                                <path d="M3 18h6v-2H3v2zM3 6v2h18V6H3zm0 7h12v-2H3v2z" />
+                            </svg>
+                            Organize Existing Games to Library
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group danger-zone">
+                    <label>Danger Zone</label>
+                    <button class="btn btn-danger" id="btn-clear-catalog">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
+                        </svg>
+                        Clear Entire Catalog
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="btn-save-settings">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Tag Modal -->
+    <div class="modal-overlay" id="tag-modal">
+        <div class="modal modal-small">
+            <div class="modal-header">
+                <h2>Add Tag</h2>
+                <button class="btn btn-icon btn-close-tag-modal">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path
+                            d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="new-tag">Tag Name</label>
+                    <input type="text" id="new-tag" placeholder="e.g., favorite, arcade, rpg">
+                </div>
+                <div class="quick-tags">
+                    <span class="quick-tag-label">Quick Add:</span>
+                    <button class="btn btn-tag" data-tag="favorite">⭐ Favorite</button>
+                    <button class="btn btn-tag" data-tag="arcade">🕹️ Arcade</button>
+                    <button class="btn btn-tag" data-tag="adventure">🗺️ Adventure</button>
+                    <button class="btn btn-tag" data-tag="rpg">⚔️ RPG</button>
+                    <button class="btn btn-tag" data-tag="puzzle">🧩 Puzzle</button>
+                    <button class="btn btn-tag" data-tag="sports">⚽ Sports</button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost btn-close-tag-modal">Cancel</button>
+                <button class="btn btn-primary" id="btn-confirm-tag">Add Tag</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanning Progress Modal -->
+    <div class="modal-overlay" id="scan-modal">
+        <div class="modal modal-small">
+            <div class="modal-header">
+                <h2>Scanning Files</h2>
+            </div>
+            <div class="modal-body">
+                <div class="scan-progress">
+                    <div class="scan-spinner"></div>
+                    <div class="scan-status">
+                        <p id="scan-status-text">Scanning directories...</p>
+                        <p class="scan-count">Found <span id="scan-count">0</span> files</p>
+                    </div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="scan-progress-fill"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ZIP Found Modal -->
+    <div class="modal-overlay" id="zip-modal">
+        <div class="modal modal-small">
+            <div class="modal-header">
+                <h2>📦 ZIP File Found</h2>
+            </div>
+            <div class="modal-body">
+                <p class="zip-filename" id="zip-filename">archive.zip</p>
+                <p class="zip-description">This archive may contain C64 game files. Would you like to scan inside it?
+                </p>
+                <div class="checkbox-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="zip-remember-choice">
+                        <span>Remember my choice for this scan session</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer zip-modal-footer">
+                <button class="btn btn-ghost" id="btn-zip-skip">Skip</button>
+                <button class="btn btn-primary" id="btn-zip-extract">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+                        <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" />
+                    </svg>
+                    Extract & Add
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="library.js"></script>
+    <script src="scanner.js"></script>
+    <script src="metadata.js"></script>
+    <script src="catalog.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
